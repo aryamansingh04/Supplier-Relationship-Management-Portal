@@ -1,0 +1,400 @@
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Check, ShieldCheck, ChevronUp, Truck, Server, 
+  ArrowRight, ArrowLeft, Mail, Lock, BarChart, 
+  Network
+} from 'lucide-react';
+
+// ==========================================
+// GLOBE VISUALIZATION (LEFT PANEL)
+// ==========================================
+const GlobeGraphic = () => {
+  const nodes = [
+    { id: 1, x: 120, y: 110, r: 4, color: '#60a5fa' },
+    { id: 2, x: 280, y: 130, r: 5, color: '#38bdf8' },
+    { id: 3, x: 310, y: 230, r: 6, color: '#818cf8' },
+    { id: 4, x: 210, y: 310, r: 4, color: '#60a5fa' },
+    { id: 5, x: 110, y: 250, r: 5, color: '#818cf8' },
+    { id: 6, x: 190, y: 180, r: 7, color: '#38bdf8' },
+  ];
+
+  const connections = [
+    { source: 6, target: 1 },
+    { source: 6, target: 2 },
+    { source: 6, target: 3 },
+    { source: 6, target: 4 },
+    { source: 6, target: 5 },
+    { source: 1, target: 2 },
+    { source: 2, target: 3 },
+    { source: 3, target: 4 },
+    { source: 4, target: 5 },
+    { source: 5, target: 1 },
+  ];
+
+  return (
+    <div className="relative w-full aspect-square max-w-[550px] mx-auto flex items-center justify-center pointer-events-none">
+       {/* Ambient bright fog */}
+       <div className="absolute inset-0 bg-blue-300/10 blur-[90px] rounded-full mix-blend-multiply" />
+       
+       <motion.div
+        className="w-full h-full relative flex items-center justify-center"
+        animate={{ 
+           rotateZ: [0, 2, -2, 0],
+        }}
+        transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+        style={{ transformStyle: 'preserve-3d', perspective: 1200 }}
+      >
+         
+         {/* Base Glass Sphere */}
+         <svg viewBox="0 0 400 400" className="w-[110%] h-[110%] absolute overflow-visible z-0 drop-shadow-xl">
+            <defs>
+               <radialGradient id="glassSphereLight" cx="35%" cy="30%" r="65%">
+                  <stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" />
+                  <stop offset="35%" stopColor="#f8fafc" stopOpacity="0.6" />
+                  <stop offset="70%" stopColor="#e0f2fe" stopOpacity="0.3" />
+                  <stop offset="90%" stopColor="#bae6fd" stopOpacity="0.5" />
+                  <stop offset="100%" stopColor="#7dd3fc" stopOpacity="0.2" />
+               </radialGradient>
+               <radialGradient id="rimLightLight" cx="50%" cy="50%" r="50%">
+                  <stop offset="88%" stopColor="#ffffff" stopOpacity="0" />
+                  <stop offset="96%" stopColor="#ffffff" stopOpacity="0.8" />
+                  <stop offset="100%" stopColor="#e0f2fe" stopOpacity="1" />
+               </radialGradient>
+               <filter id="bottomGlow">
+                  <feGaussianBlur stdDeviation="15" result="blur"/>
+                  <feMerge>
+                     <feMergeNode in="blur"/>
+                     <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+               </filter>
+            </defs>
+
+            <circle cx="200" cy="200" r="160" fill="url(#glassSphereLight)" />
+            <circle cx="200" cy="200" r="160" fill="url(#rimLightLight)" />
+         </svg>
+
+         {/* Rotating Grids, Lines, Nodes */}
+         <motion.svg 
+            viewBox="0 0 400 400" 
+            className="w-[100%] h-[100%] absolute overflow-visible z-10"
+            animate={{ rotate: 360, rotateY: [0, 10, -10, 0] }}
+            transition={{ 
+               rotate: { duration: 160, repeat: Infinity, ease: 'linear' },
+               rotateY: { duration: 20, repeat: Infinity, ease: 'easeInOut' }
+            }}
+            style={{ transformOrigin: 'center center', transformStyle: 'preserve-3d' }}
+         >
+            <defs>
+               <filter id="nodeGlowLight">
+                  <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                  <feMerge>
+                     <feMergeNode in="coloredBlur"/>
+                     <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+               </filter>
+            </defs>
+
+            {/* Subtle Equator and Grids */}
+            <g opacity="0.45">
+               <ellipse cx="200" cy="200" rx="160" ry="35" fill="none" stroke="#bae6fd" strokeWidth="1" />
+               <ellipse cx="200" cy="200" rx="160" ry="80" fill="none" stroke="#e0f2fe" strokeWidth="0.75" strokeDasharray="4 4" />
+               <ellipse cx="200" cy="200" rx="160" ry="120" fill="none" stroke="#e0f2fe" strokeWidth="0.5" strokeDasharray="2 4" />
+               
+               <ellipse cx="200" cy="200" rx="35" ry="160" fill="none" stroke="#bae6fd" strokeWidth="0.75" />
+               <ellipse cx="200" cy="200" rx="80" ry="160" fill="none" stroke="#e0f2fe" strokeWidth="0.5" strokeDasharray="4 4" />
+               <ellipse cx="200" cy="200" rx="120" ry="160" fill="none" stroke="#e0f2fe" strokeWidth="0.5" strokeDasharray="2 4" />
+            </g>
+
+            {/* Connections */}
+            {connections.map((c, i) => {
+              const n1 = nodes.find(n => n.id === c.source)!;
+              const n2 = nodes.find(n => n.id === c.target)!;
+              const dx = n2.x - n1.x;
+              const dy = n2.y - n1.y;
+              const cx = n1.x + dx/2 + dy * 0.15;
+              const cy = n1.y + dy/2 - dx * 0.15;
+              const pathD = `M ${n1.x} ${n1.y} Q ${cx} ${cy} ${n2.x} ${n2.y}`;
+
+              return (
+                 <g key={`conn-${i}`}>
+                   <path 
+                     d={pathD} 
+                     fill="none" 
+                     stroke="#7dd3fc" 
+                     strokeWidth="1" 
+                     opacity="0.4"
+                   />
+                   {/* Data fluid pulses */}
+                   <motion.path 
+                     d={pathD} 
+                     fill="none"
+                     stroke="#eff6ff"
+                     strokeWidth="2.5"
+                     initial={{ pathLength: 0, opacity: 0 }}
+                     animate={{ pathLength: 1, opacity: [0, 1, 0] }}
+                     transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.4, ease: "easeInOut" }}
+                     filter="url(#nodeGlowLight)"
+                   />
+                   <motion.path 
+                     d={pathD} 
+                     fill="none"
+                     stroke={n2.color}
+                     strokeWidth="1.5"
+                     initial={{ pathLength: 0, opacity: 0 }}
+                     animate={{ pathLength: 1, opacity: [0, 0.8, 0] }}
+                     transition={{ duration: 2.5, repeat: Infinity, delay: i * 0.4 + 0.2, ease: "easeInOut" }}
+                     filter="url(#nodeGlowLight)"
+                   />
+                 </g>
+              )
+            })}
+
+            {/* Nodes */}
+            {nodes.map((node) => {
+               return (
+                  <g key={`node-${node.id}`}>
+                     <motion.circle 
+                       cx={node.x} cy={node.y} 
+                       r={node.r} 
+                       fill="none"
+                       stroke={node.color}
+                       strokeWidth={2}
+                       initial={{ scale: 1, opacity: 0.9 }}
+                       animate={{ scale: [1, 3], opacity: [0.9, 0] }}
+                       transition={{ duration: 2.5, repeat: Infinity, delay: node.id * 0.3 }}
+                     />
+                     <circle 
+                       cx={node.x} cy={node.y} 
+                       r={node.r + 1.5} 
+                       fill="#fff"
+                       filter="url(#nodeGlowLight)"
+                     />
+                     <circle cx={node.x} cy={node.y} r={node.r} fill={node.color} />
+                  </g>
+               )
+            })}
+         </motion.svg>
+
+         {/* Orbiting outer elements & ground reflections */}
+         <svg viewBox="0 0 400 400" className="w-[120%] h-[120%] absolute overflow-visible z-15 pointer-events-none">
+            {/* Base glowing platform */}
+            <ellipse cx="200" cy="360" rx="120" ry="15" fill="none" stroke="#7dd3fc" strokeWidth="1" opacity="0.3" filter="url(#bottomGlow)" />
+            <ellipse cx="200" cy="360" rx="160" ry="20" fill="none" stroke="#bae6fd" strokeWidth="0.5" strokeDasharray="3 6" opacity="0.4" />
+            <ellipse cx="200" cy="360" rx="200" ry="25" fill="none" stroke="#e0f2fe" strokeWidth="0.5" opacity="0.3" />
+            
+            {/* Outer dotted orbit */}
+            <motion.g animate={{ rotate: -360 }} transition={{ duration: 200, repeat: Infinity, ease: 'linear' }} style={{ transformOrigin: 'center' }}>
+               <circle cx="200" cy="200" r="180" fill="none" stroke="#e0f2fe" strokeWidth="0.5" strokeDasharray="5 15" opacity="0.6" />
+               <circle cx="200" cy="200" r="215" fill="none" stroke="#bae6fd" strokeWidth="0.5" strokeDasharray="2 6" opacity="0.4" />
+            </motion.g>
+         </svg>
+
+         {/* Front Top Specular */}
+         <svg viewBox="0 0 400 400" className="w-[110%] h-[110%] absolute overflow-visible z-20 pointer-events-none">
+            <defs>
+               <radialGradient id="topReflectionLight" cx="30%" cy="20%" r="50%">
+                  <stop offset="0%" stopColor="#ffffff" stopOpacity="0.85" />
+                  <stop offset="35%" stopColor="#ffffff" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+               </radialGradient>
+            </defs>
+            <circle cx="200" cy="200" r="160" fill="url(#topReflectionLight)" />
+         </svg>
+
+      </motion.div>
+    </div>
+  )
+}
+
+const Feature = ({ icon, title, sub, lightMode = false }: { icon: React.ReactNode, title: string, sub: string, lightMode?: boolean }) => (
+    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-2.5 sm:gap-3 text-center sm:text-left">
+        <div className={lightMode ? "text-blue-600" : "text-cyan-500"}>
+            {React.cloneElement(icon as React.ReactElement, { className: 'w-5 h-5' })}
+        </div>
+        <div>
+            <h4 className={`text-[12px] font-bold ${lightMode ? 'text-slate-900' : 'text-white'} mb-0`}>{title}</h4>
+            <p className={`text-[10px] ${lightMode ? 'text-slate-500' : 'text-white/50'} leading-tight`}>{sub}</p>
+        </div>
+    </div>
+)
+
+// ==========================================
+// ROLE SELECTION / RIGHT PANEL
+// ==========================================
+const RoleSelection = ({ onSelect }: { onSelect: (r: 'supplier' | 'admin') => void }) => (
+  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98 }} transition={{ duration: 0.3 }} className="w-full">
+    <h2 className="text-3xl font-extrabold text-[#0B1120] mb-2 tracking-tight">Let's get started</h2>
+    <p className="text-slate-500 mb-10 text-sm">Select your role to continue to the platform</p>
+    
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+       <RoleCard 
+         title="Supplier"
+         desc="Manage your business and grow with us"
+         icon={<Truck strokeWidth={2} />}
+         features={['Manage Bids & RFQs', 'Track Orders & Deliveries', 'Upload Invoices', 'View Performance']}
+         onClick={() => onSelect('supplier')}
+       />
+       <RoleCard 
+         title="Admin"
+         desc="Manage system and platform operations"
+         icon={<Server strokeWidth={2} />}
+         features={['User & Role Management', 'System Configuration', 'Analytics Dashboard', 'Audit & Compliance']}
+         onClick={() => onSelect('admin')}
+       />
+    </div>
+    
+    <div className="mt-10 bg-slate-50 border border-slate-100 rounded-xl py-4 flex items-center justify-center gap-2 text-xs font-medium text-slate-500">
+       <ShieldCheck className="w-4 h-4 text-blue-600" />
+       Your data is safe with enterprise-grade security
+    </div>
+  </motion.div>
+)
+
+const RoleCard = ({ title, desc, icon, features, onClick }: any) => (
+   <motion.div 
+     whileHover={{ y: -4, transition: { duration: 0.2 } }}
+     className="bg-white p-8 rounded-[1.5rem] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgb(0,0,0,0.08)] hover:border-blue-500/20 transition-all duration-300 cursor-pointer flex flex-col group relative overflow-hidden"
+     onClick={onClick}
+   >
+      <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50/50 rounded-bl-full translate-x-10 -translate-y-10 group-hover:bg-blue-50 transition-colors" />
+
+      <div className="w-12 h-12 bg-white text-blue-600 rounded-xl flex items-center justify-center mb-5 border border-blue-100 shadow-sm group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-[0_0_15px_rgba(37,99,235,0.3)] transition-all duration-300 relative z-10">
+         {icon}
+      </div>
+      <h3 className="text-xl font-bold text-slate-900 mb-1.5 relative z-10">{title}</h3>
+      <p className="text-[13px] text-slate-500 mb-6 relative z-10 min-h-[40px]">{desc}</p>
+      
+      <ul className="space-y-3 mb-8 flex-1 relative z-10">
+         {features.map((f: string, i: number) => (
+            <li key={i} className="flex items-center gap-3 text-xs text-slate-600">
+               <div className="w-3.5 h-3.5 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+                  <Check className="w-2.5 h-2.5 text-blue-600" strokeWidth={3} />
+               </div>
+               {f}
+            </li>
+         ))}
+      </ul>
+      
+      <div className="w-9 h-9 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 group-hover:border-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 relative z-10">
+         <ArrowRight className="w-4 h-4" />
+      </div>
+   </motion.div>
+)
+
+// ==========================================
+// LOGIN FORM (RIGHT PANEL)
+// ==========================================
+const LoginForm = ({ role, onBack }: { role: string | null, onBack: () => void }) => (
+   <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }} className="w-full max-w-sm mx-auto">
+      <button onClick={onBack} className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-800 transition-colors mb-10 group">
+         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1.5 transition-transform" />
+         Back
+      </button>
+
+      <div className="mb-8">
+         <h2 className="text-3xl font-extrabold text-slate-900 mb-2 tracking-tight">
+            {role === 'supplier' ? 'Supplier Login' : 'Admin Login'}
+         </h2>
+         <p className="text-slate-500 text-sm">Sign in to your account</p>
+      </div>
+
+      <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+         <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 uppercase tracking-widest">Email</label>
+            <div className="relative group">
+               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+               <input
+                  type="email"
+                  placeholder="name@company.com"
+                  className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-11 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+               />
+            </div>
+         </div>
+         <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 uppercase tracking-widest">Password</label>
+            <div className="relative group">
+               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+               <input
+                  type="password"
+                  placeholder="••••••••"
+                  className="w-full bg-white border border-slate-200 rounded-xl py-2.5 pl-11 pr-4 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+               />
+            </div>
+         </div>
+         
+         <div className="flex items-center justify-between mt-6 mb-8 text-xs font-medium">
+            <label className="flex items-center gap-2 cursor-pointer group">
+               <input type="checkbox" className="w-3.5 h-3.5 rounded border-slate-300 text-blue-500 focus:ring-blue-500/20" />
+               <span className="text-slate-500 group-hover:text-slate-900 transition-colors">Remember me</span>
+            </label>
+            <a href="#" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">Forgot password?</a>
+         </div>
+
+         <motion.button
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            className="w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-300 shadow-[0_4px_14px_0_rgba(37,99,235,0.39)] bg-blue-600 hover:bg-blue-700 hover:shadow-[0_6px_20px_rgba(37,99,235,0.23)] text-white text-sm"
+         >
+            Sign In to {role === 'supplier' ? 'Portal' : 'Dashboard'}
+         </motion.button>
+      </form>
+   </motion.div>
+)
+
+// ==========================================
+// MAIN APP COMPONENT
+// ==========================================
+export default function App() {
+  const [step, setStep] = useState<'role' | 'login'>('role');
+  const [role, setRole] = useState<'supplier' | 'admin' | null>(null);
+
+  return (
+    <div className="min-h-screen w-full bg-[#E5E9F0] flex items-center justify-center p-4 sm:p-6 lg:p-8 font-sans selection:bg-blue-500/30">
+      
+      <div className="w-full max-w-[1300px] h-full min-h-[700px] max-h-[900px] bg-white rounded-[2rem] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] flex flex-col lg:flex-row overflow-hidden border border-white/60">
+        
+        {/* LEFT PANEL - LIGHT GLASS PRESENTATION */}
+        <div className="hidden lg:flex w-[45%] bg-[#f4f7fb] text-slate-800 flex-col p-8 relative overflow-hidden shrink-0 border-r border-slate-100">
+          
+          {/* Deep organic light mode background with subtle glows */}
+          <div className="absolute inset-0 z-0 select-none pointer-events-none">
+             <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[80%] bg-white rounded-full blur-[100px] opacity-90" />
+             <div className="absolute top-[10%] right-[-10%] w-[60%] h-[60%] bg-[#dbeafe] rounded-full blur-[90px] opacity-60" />
+             <div className="absolute bottom-[-10%] left-[10%] w-[70%] h-[70%] bg-[#e0f2fe] rounded-full blur-[100px] opacity-50" />
+          </div>
+
+          {/* Core Graphic */}
+          <div className="flex-1 flex items-center justify-center relative z-10 w-full h-full">
+             <GlobeGraphic />
+          </div>
+        </div>
+
+        {/* RIGHT PANEL - INTERACTIVE AREA */}
+        <div className="flex-1 p-6 sm:p-10 lg:p-16 flex flex-col justify-between overflow-hidden relative z-0 bg-[#fafafa]">
+          
+          <div className="flex-1 flex flex-col justify-center max-w-2xl mx-auto w-full">
+            <AnimatePresence mode="wait">
+              {step === 'role' ? (
+                 <RoleSelection key="role" onSelect={(r) => { setRole(r); setStep('login'); }} />
+              ) : (
+                 <LoginForm key="login" role={role} onBack={() => { setStep('role'); setRole(null); }} />
+              )}
+            </AnimatePresence>
+          </div>
+          
+          {/* Footer Features */}
+          <div className="mt-8 pt-6 border-t border-slate-200">
+             <div className="flex flex-col sm:flex-row justify-center items-center gap-6 sm:gap-12 md:gap-16">
+                <Feature icon={<ShieldCheck />} title="Secure & Compliant" sub="Enterprise grade" lightMode />
+                <Feature icon={<Network />} title="Connected Globally" sub="Partners worldwide" lightMode />
+                <Feature icon={<BarChart />} title="Data Driven" sub="Smart decisions" lightMode />
+             </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
